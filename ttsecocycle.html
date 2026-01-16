@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Digital - Tema Lingkungan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #66ea92 0%, #128c55 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #51cf66;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .game-area {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .grid-container {
+            display: inline-block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 2px;
+            background: #ddd;
+            padding: 2px;
+            border-radius: 10px;
+        }
+
+        .cell {
+            background: white;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .cell.black {
+            background: #333;
+            cursor: default;
+        }
+
+        .cell.active {
+            background: #75f1b1;
+            border: 2px solid #4df0c7;
+        }
+
+        .cell.correct {
+            background: #51cf66;
+            color: white;
+        }
+
+        .cell.number::before {
+            content: attr(data-number);
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            font-size: 10px;
+            color: #51cf66;
+            font-weight: bold;
+        }
+
+        .clues {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .clue-section {
+            margin-bottom: 25px;
+        }
+
+        .clue-section h2 {
+            color: #b8f49b;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 3px solid #90f689;
+            padding-bottom: 5px;
+        }
+
+        .clue {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid #51cf66;
+        }
+
+        .clue:hover {
+            background: #e7f5ff;
+            transform: translateX(5px);
+        }
+
+        .clue.selected {
+            background: #78e6aa;
+            border-left-color: #5bea94;
+        }
+
+        .clue.completed {
+            background: #51cf66;
+            border-left-color: #51cf66;
+            opacity: 0.7;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-check {
+            background: #51cf66;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #40c057;
+            transform: scale(1.05);
+        }
+
+        .btn-reset {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #fa5252;
+            transform: scale(1.05);
+        }
+
+        .btn-hint {
+            background: #74c0fc;
+            color: white;
+        }
+
+        .btn-hint:hover {
+            background: #4dabf7;
+            transform: scale(1.05);
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        .success {
+            color: #51cf66;
+            animation: bounce 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(8, 40px);
+                grid-template-rows: repeat(8, 40px);
+            }
+            
+            .cell {
+                font-size: 16px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TTS 🌿</h1>
+        <p class="subtitle">Teka-teki silang</p>
+        
+        <div class="game-area">
+            <div class="grid-container">
+                <div class="grid" id="grid"></div>
+            </div>
+            
+            <div class="clues">
+                <div class="clue-section">
+                    <h2>📝 Mendatar</h2>
+                    <div id="clues-across"></div>
+                </div>
+                
+                <div class="clue-section">
+                    <h2>📝 Menurun</h2>
+                    <div id="clues-down"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-check" onclick="checkAnswers()">✓ Cek Jawaban</button>
+            <button class="btn-hint" onclick="showHint()">💡 Petunjuk</button>
+            <button class="btn-reset" onclick="resetGame()">🔄 Reset</button>
+        </div>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        
+        const config = {
+            
+            solution: [
+                ['R', 'E', 'C', 'Y', 'C', 'L', 'E', '#'],
+                ['#', '#', '#', '#', '#', 'I', '#', '#'],
+                ['#', '#', '#', 'D', '#', 'M', '#', '#'],
+                ['#', 'R', '#', 'A', '#', 'B', '#', '#'],
+                ['#', 'E', 'D', 'U', 'K', 'A', 'S', 'I'],
+                ['#', 'U', '#', 'N', '#', 'H', '#', '#'],
+                ['#', 'S', '#', '#', '#', '#', '#', '#'],
+                ['#', 'E', '#', '#', '#', '#', '#', '#']
+            ],
+            
+            // Soal Mendatar
+            // Format: { number: nomor, row: baris(0-7), col: kolom(0-7), clue: "soal", answer: "JAWABAN" }
+            across: [
+                { number: 1, row: 0, col: 0, clue: "Proses mengolah sampah menjadi produk baru", answer: "RECYCLE" },
+                { number: 2, row: 4, col: 1, clue: "Kegiata yang bertujuan untuk meningkatkan pengetahuan kesadaran pentingnya mengelola sampah", answer: "EDUKASI" }
+            ],
+            
+            // Soal Menurun
+            // Format: { number: nomor, row: baris(0-7), col: kolom(0-7), clue: "soal", answer: "JAWABAN" }
+            down: [
+                { number: 3, row: 0, col: 5, clue: "Buangan yang dapat mencemari udara, air, atau tanah", answer: "LIMBAH" },
+                { number: 4, row: 2, col: 3, clue: "Sampah organik yang dihasilkan oleh tumbuhan", answer: "DAUN" },
+                { number: 5, row: 3, col: 1, clue: "Kegiatan memanfaatkan kembali suatu barang atau sampah", answer: "REUSE" }
+            ]
+        };
+        
+        // ============================================
+        // JANGAN UBAH KODE DI BAWAH INI
+        // ============================================
+        
+        let currentWord = null;
+        let userAnswers = Array(8).fill(null).map(() => Array(8).fill(''));
+        
+        function initGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            const numbers = {};
+            [...config.across, ...config.down].forEach(item => {
+                const key = `${item.row}-${item.col}`;
+                numbers[key] = item.number;
+            });
+            
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    if (config.solution[r][c] === '#') {
+                        cell.classList.add('black');
+                    } else {
+                        const key = `${r}-${c}`;
+                        if (numbers[key]) {
+                            cell.classList.add('number');
+                            cell.dataset.number = numbers[key];
+                        }
+                        
+                        cell.addEventListener('click', () => selectCell(r, c));
+                        cell.addEventListener('input', (e) => {
+                            userAnswers[r][c] = e.target.textContent.toUpperCase();
+                        });
+                        cell.contentEditable = true;
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+        
+        function initClues() {
+            const acrossDiv = document.getElementById('clues-across');
+            const downDiv = document.getElementById('clues-down');
+            
+            acrossDiv.innerHTML = config.across.map(item => 
+                `<div class="clue" onclick="selectWord(${item.number}, 'across')">
+                    <strong>${item.number}.</strong> ${item.clue}
+                </div>`
+            ).join('');
+            
+            downDiv.innerHTML = config.down.map(item => 
+                `<div class="clue" onclick="selectWord(${item.number}, 'down')">
+                    <strong>${item.number}.</strong> ${item.clue}
+                </div>`
+            ).join('');
+        }
+        
+        function selectWord(number, direction) {
+            document.querySelectorAll('.clue').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.cell').forEach(el => el.classList.remove('active'));
+            
+            event.target.closest('.clue').classList.add('selected');
+            
+            const word = direction === 'across' 
+                ? config.across.find(w => w.number === number)
+                : config.down.find(w => w.number === number);
+            
+            currentWord = { ...word, direction };
+            highlightWord(word, direction);
+        }
+        
+        function selectCell(row, col) {
+            document.querySelectorAll('.cell').forEach(el => el.classList.remove('active'));
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            cell.classList.add('active');
+        }
+        
+        function highlightWord(word, direction) {
+            const len = word.answer.length;
+            for (let i = 0; i < len; i++) {
+                const r = direction === 'across' ? word.row : word.row + i;
+                const c = direction === 'across' ? word.col + i : word.col;
+                const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                if (cell) cell.classList.add('active');
+            }
+        }
+        
+        function checkAnswers() {
+            let correct = 0;
+            let total = 0;
+            
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (config.solution[r][c] !== '#') {
+                        total++;
+                        const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                        const userAnswer = cell.textContent.toUpperCase().trim();
+                        
+                        if (userAnswer === config.solution[r][c]) {
+                            cell.classList.add('correct');
+                            correct++;
+                        } else {
+                            cell.classList.remove('correct');
+                        }
+                    }
+                }
+            }
+            
+            const msg = document.getElementById('message');
+            if (correct === total) {
+                msg.textContent = '🎉 Selamat! Semua jawaban benar!';
+                msg.className = 'message success';
+            } else {
+                msg.textContent = `✓ ${correct} dari ${total} jawaban benar`;
+                msg.className = 'message';
+            }
+        }
+        
+        function showHint() {
+            if (!currentWord) {
+                alert('Pilih soal terlebih dahulu!');
+                return;
+            }
+            
+            const len = currentWord.answer.length;
+            const dir = currentWord.direction;
+            
+            for (let i = 0; i < len; i++) {
+                const r = dir === 'across' ? currentWord.row : currentWord.row + i;
+                const c = dir === 'across' ? currentWord.col + i : currentWord.col;
+                const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                
+                if (cell && !cell.textContent.trim()) {
+                    cell.textContent = config.solution[r][c];
+                    cell.classList.add('correct');
+                    break;
+                }
+            }
+        }
+        
+        function resetGame() {
+            if (confirm('Reset semua jawaban?')) {
+                document.querySelectorAll('.cell:not(.black)').forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('correct', 'active');
+                });
+                document.getElementById('message').textContent = '';
+                currentWord = null;
+            }
+        }
+        
+        // Initialize
+        initGrid();
+        initClues();
+    </script>
+</body>
+</html>
